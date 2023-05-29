@@ -18,10 +18,6 @@ interface TodoProviderProps {
 const TodoProvider = ({ children, todoService }: TodoProviderProps) => {
   const [state, dispatch] = useReducer(todoReducer, initialTodoState)
 
-  if (state.error) {
-    throw state.error
-  }
-
   const getTodos = createAsyncDispatcher(
     dispatch,
     TodoActionTypes.GET_TODOS,
