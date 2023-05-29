@@ -17,7 +17,7 @@ interface DropdownProps {
 const RECEIVING_LIMIT = 10
 
 const Dropdown = ({ keyword, resetInput }: DropdownProps) => {
-  const { loading, data } = useSearchState()
+  const { loading, data, error } = useSearchState()
   const { results, isEnd } = data
 
   const { addResult, resetResults } = useSearchDispatch()
@@ -37,6 +37,10 @@ const Dropdown = ({ keyword, resetInput }: DropdownProps) => {
     addMore,
     results.length
   )
+
+  if (error) {
+    throw error
+  }
 
   useEffect(() => {
     resetResults()

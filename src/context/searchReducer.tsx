@@ -38,7 +38,7 @@ export type SearchAction =
     }
   | {
       type: SearchActionTypes.ERROR
-      payload: { error: Error }
+      error: Error
     }
 
 const searchReducer = (
@@ -60,7 +60,7 @@ const searchReducer = (
     case SearchActionTypes.RESET_RESULTS:
       return initialSearchState
     case SearchActionTypes.ERROR:
-      return { ...state, ...error(action.payload.error) }
+      return { ...state, ...error(action.error) }
     default:
       return state
   }
