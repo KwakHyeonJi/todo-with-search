@@ -14,7 +14,7 @@ interface SearchProviderProps {
   searchService: SearchService
 }
 
-function SearchProvider({ children, searchService }: SearchProviderProps) {
+const SearchProvider = ({ children, searchService }: SearchProviderProps) => {
   const [state, dispatch] = useReducer(searchReducer, initialSearchState)
 
   const addResult = createAsyncDispatcher(
