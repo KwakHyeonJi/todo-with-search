@@ -11,7 +11,7 @@ export class TodoService {
   async get() {
     try {
       const response = await this.apiRequest.get(`${this.RESOURCE}`)
-      return response
+      return response.data
     } catch (error) {
       throw new Error(`API get error: ${this.RESOURCE}`)
     }
@@ -20,7 +20,7 @@ export class TodoService {
   async create(todo: { title: string }) {
     try {
       const response = await this.apiRequest.post(`${this.RESOURCE}`, todo)
-      return response
+      return response.data
     } catch (error) {
       throw new Error(`API create error: ${this.RESOURCE}`)
     }
@@ -29,7 +29,7 @@ export class TodoService {
   async delete(id: string) {
     try {
       const response = await this.apiRequest.delete(`${this.RESOURCE}/${id}`)
-      return response
+      return response.data
     } catch (error) {
       throw new Error(`API delete error: ${this.RESOURCE}`)
     }

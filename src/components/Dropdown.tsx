@@ -5,48 +5,32 @@ import styled from 'styled-components'
 import { useSearchDispatch, useSearchState } from '../context/searchContext'
 import { useTodoDispatch } from '../context/todoContext'
 import useInfiniteScroll from '../hooks/useInfiniteScroll'
-import { StatusTypes } from '../hooks/useStatus'
 
 import ColoredKeyword from './ColoredKeyword'
 import Spinner from './Spinner'
 
 interface DropdownProps {
   keyword: string
-  isSearching: boolean
   resetInput: () => void
-  changeStatus: (state: StatusTypes) => void
 }
 
 const RECEIVING_LIMIT = 10
 
-const Dropdown = ({
-  keyword,
-  isSearching,
-  resetInput,
-  changeStatus
-}: DropdownProps) => {
-  const { results, isEnd } = useSearchState()
-  const { add: addResults, reset } = useSearchDispatch()
-  const { add: addTodo } = useTodoDispatch()
+const Dropdown = ({ keyword, resetInput }: DropdownProps) => {
+  const { loading, data } = useSearchState()
+  const { results, isEnd } = data
+
+  const { addResult, resetResults } = useSearchDispatch()
+  const { addTodo } = useTodoDispatch()
 
   const handleAddTodo = async (title: string) => {
-    try {
-      changeStatus(StatusTypes.SAVING)
-      await addTodo({ title })
-      resetInput()
-    } catch (error) {
-      console.error(error)
-      alert('Something went wrong.')
-    } finally {
-      changeStatus(StatusTypes.IDLE)
-    }
+    await addTodo({ title })
+    resetInput()
   }
 
-  const addMore = async () => {
+  const addMore = () => {
     if (isEnd) return
-    changeStatus(StatusTypes.SEARCHING)
-    await addResults(keyword, Math.floor(results.length / RECEIVING_LIMIT) + 1)
-    changeStatus(StatusTypes.IDLE)
+    addResult(keyword, Math.floor(results.length / RECEIVING_LIMIT) + 1)
   }
 
   const infiniteScrollRef = useInfiniteScroll<HTMLUListElement>(
@@ -55,14 +39,8 @@ const Dropdown = ({
   )
 
   useEffect(() => {
-    const fetch = async () => {
-      changeStatus(StatusTypes.SEARCHING)
-      await addResults(keyword)
-      changeStatus(StatusTypes.IDLE)
-    }
-
-    reset()
-    keyword && fetch()
+    resetResults()
+    keyword && addResult(keyword)
   }, [keyword])
 
   return results.length ? (
@@ -77,7 +55,7 @@ const Dropdown = ({
         </DropdownItem>
       ))}
       <DropdownOption>
-        {isSearching ? <Spinner /> : !isEnd && <FaEllipsisH />}
+        {loading ? <Spinner /> : !isEnd && <FaEllipsisH />}
       </DropdownOption>
     </DropdownLayout>
   ) : (

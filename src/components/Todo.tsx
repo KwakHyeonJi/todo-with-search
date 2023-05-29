@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import TodoHeader from './TodoHeader'
 import TodoInput from './TodoInput'
 import TodoList from './TodoList'
+import TodoListFetcher from './TodoListFetcher'
 
 const Todo = () => {
   return (
@@ -10,7 +11,9 @@ const Todo = () => {
       <TodoSection>
         <TodoHeader />
         <TodoInput />
-        <TodoList />
+        <TodoListFetcher>
+          <TodoList />
+        </TodoListFetcher>
       </TodoSection>
     </TodoLayout>
   )

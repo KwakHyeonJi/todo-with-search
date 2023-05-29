@@ -1,8 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { FaTrash } from 'react-icons/fa'
 import styled from 'styled-components'
 
-import { useTodoDispatch } from '../context/todoContext'
+import { useTodoDispatch, useTodoState } from '../context/todoContext'
 
 import Spinner from './Spinner'
 
@@ -12,30 +12,21 @@ interface TodoItemProps {
 }
 
 const TodoItem = ({ id, title }: TodoItemProps) => {
-  const [isInProgress, setIsInProgress] = useState(false)
-  const { remove } = useTodoDispatch()
+  const { loading } = useTodoState()
+  const { removeTodo } = useTodoDispatch()
 
-  const handleRemoveTodo = useCallback(async () => {
-    try {
-      setIsInProgress(true)
-      await remove(id)
-    } catch (error) {
-      setIsInProgress(false)
-      console.error(error)
-      alert('Something went wrong.')
-    }
-  }, [id])
+  const handleClickRemove = useCallback(() => removeTodo(id), [id])
 
   return (
     <TodoItemLayout>
       <span>{title}</span>
       <TodoItemOptionBox>
-        {!isInProgress ? (
-          <TodoItemRemoveButton onClick={handleRemoveTodo}>
+        {loading ? (
+          <Spinner />
+        ) : (
+          <TodoItemRemoveButton onClick={handleClickRemove}>
             <FaTrash />
           </TodoItemRemoveButton>
-        ) : (
-          <Spinner />
         )}
       </TodoItemOptionBox>
     </TodoItemLayout>

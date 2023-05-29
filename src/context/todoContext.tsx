@@ -1,15 +1,59 @@
-import React, { createContext, useContext, useEffect, useReducer } from 'react'
+import { createContext, useContext, useReducer } from 'react'
 
 import { TodoService } from '../service/TodoService'
+import { createAsyncDispatcher } from '../utils/asyncActionUtils'
 
-import todoReducer, { TodoState, TodoActionTypes, Todo } from './todoReducer'
+import todoReducer, {
+  Todo,
+  TodoState,
+  TodoActionTypes,
+  initialTodoState
+} from './todoReducer'
 
-const initialState: TodoState = []
+interface TodoProviderProps {
+  children: React.ReactNode
+  todoService: TodoService
+}
+
+const TodoProvider = ({ children, todoService }: TodoProviderProps) => {
+  const [state, dispatch] = useReducer(todoReducer, initialTodoState)
+
+  if (state.error) {
+    throw state.error
+  }
+
+  const getTodos = createAsyncDispatcher(
+    dispatch,
+    TodoActionTypes.GET_TODOS,
+    () => todoService.get()
+  )
+
+  const addTodo = createAsyncDispatcher(
+    dispatch,
+    TodoActionTypes.ADD_TODO,
+    (todo: Todo) => todoService.create(todo)
+  )
+
+  const removeTodo = createAsyncDispatcher(
+    dispatch,
+    TodoActionTypes.REMOVE_TODO,
+    (id: string) => todoService.delete(id)
+  )
+
+  return (
+    <TodoStateContext.Provider value={state}>
+      <TodoDispatchContext.Provider value={{ getTodos, addTodo, removeTodo }}>
+        {children}
+      </TodoDispatchContext.Provider>
+    </TodoStateContext.Provider>
+  )
+}
 
 const TodoStateContext = createContext<TodoState | null>(null)
 const TodoDispatchContext = createContext<{
-  add: ({ title }: { title: string }) => Promise<void>
-  remove: (id: string) => Promise<void>
+  getTodos: () => Promise<void>
+  addTodo: ({ title }: { title: string }) => Promise<void>
+  removeTodo: (id: string) => Promise<void>
 } | null>(null)
 
 const useTodoState = () => {
@@ -24,51 +68,6 @@ const useTodoDispatch = () => {
   if (!context)
     throw new Error('useTodoDispatch must be used within a TodoProvider')
   return context
-}
-
-interface TodoProviderProps {
-  children: React.ReactNode
-  todoService: TodoService
-}
-
-function TodoProvider({ children, todoService }: TodoProviderProps) {
-  const [state, dispatch] = useReducer(todoReducer, initialState)
-
-  useEffect(() => {
-    todoService.get().then(({ data }) =>
-      dispatch({
-        type: TodoActionTypes.SET_TODOS,
-        payload: data.map(({ id, title }: Todo) => ({
-          id,
-          title
-        }))
-      })
-    )
-  }, [todoService, dispatch])
-
-  const add = async (todo: { title: string }) => {
-    const { data } = await todoService.create(todo)
-    dispatch({
-      type: TodoActionTypes.ADD_TODO,
-      payload: { id: data.id, title: data.title }
-    })
-  }
-
-  const remove = async (id: string) => {
-    await todoService.delete(id)
-    dispatch({
-      type: TodoActionTypes.REMOVE_TODO,
-      payload: { id }
-    })
-  }
-
-  return (
-    <TodoStateContext.Provider value={state}>
-      <TodoDispatchContext.Provider value={{ add, remove }}>
-        {children}
-      </TodoDispatchContext.Provider>
-    </TodoStateContext.Provider>
-  )
 }
 
 export { TodoProvider, useTodoState, useTodoDispatch }

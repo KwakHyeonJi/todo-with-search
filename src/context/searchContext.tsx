@@ -1,15 +1,48 @@
-import React, { createContext, useContext, useReducer } from 'react'
+import { createContext, useContext, useReducer } from 'react'
 
 import { SearchService } from '../service/SearchService'
+import { createAsyncDispatcher } from '../utils/asyncActionUtils'
 
-import searchReducer, { SearchActionTypes, SearchState } from './searchReducer'
+import searchReducer, {
+  SearchState,
+  SearchActionTypes,
+  initialSearchState
+} from './searchReducer'
 
-const initialState: SearchState = { results: [], isEnd: false }
+interface SearchProviderProps {
+  children: React.ReactNode
+  searchService: SearchService
+}
+
+function SearchProvider({ children, searchService }: SearchProviderProps) {
+  const [state, dispatch] = useReducer(searchReducer, initialSearchState)
+
+  const addResult = createAsyncDispatcher(
+    dispatch,
+    SearchActionTypes.ADD_RESULT,
+    (keyword: string, page?: number, limit?: number) =>
+      searchService.get(keyword, page, limit)
+  )
+
+  const resetResults = () => {
+    dispatch({
+      type: SearchActionTypes.RESET_RESULTS
+    })
+  }
+
+  return (
+    <SearchStateContext.Provider value={state}>
+      <SearchDispatchContext.Provider value={{ addResult, resetResults }}>
+        {children}
+      </SearchDispatchContext.Provider>
+    </SearchStateContext.Provider>
+  )
+}
 
 const SearchStateContext = createContext<SearchState | null>(null)
 const SearchDispatchContext = createContext<{
-  add: (keyword: string, page?: number, limit?: number) => Promise<void>
-  reset: () => void
+  addResult: (keyword: string, page?: number, limit?: number) => Promise<void>
+  resetResults: () => void
 } | null>(null)
 
 const useSearchState = () => {
@@ -25,39 +58,4 @@ const useSearchDispatch = () => {
     throw new Error('useSearchDispatch must be used within a SearchProvider')
   return context
 }
-
-interface SearchProviderProps {
-  children: React.ReactNode
-  searchService: SearchService
-}
-
-function SearchProvider({ children, searchService }: SearchProviderProps) {
-  const [state, dispatch] = useReducer(searchReducer, initialState)
-
-  const add = async (keyword: string, page?: number, limit?: number) => {
-    const { data } = await searchService.get(keyword, page, limit)
-    dispatch({
-      type: SearchActionTypes.ADD_RESULTS,
-      payload: {
-        results: data.result,
-        total: data.total
-      }
-    })
-  }
-
-  const reset = () => {
-    dispatch({
-      type: SearchActionTypes.RESET_RESULTS
-    })
-  }
-
-  return (
-    <SearchStateContext.Provider value={state}>
-      <SearchDispatchContext.Provider value={{ add, reset }}>
-        {children}
-      </SearchDispatchContext.Provider>
-    </SearchStateContext.Provider>
-  )
-}
-
 export { SearchProvider, useSearchState, useSearchDispatch }

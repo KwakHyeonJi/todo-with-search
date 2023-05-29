@@ -2,11 +2,11 @@ import { useCallback, useEffect } from 'react'
 import { FaPlusCircle, FaSearch } from 'react-icons/fa'
 import styled from 'styled-components'
 
-import { useTodoDispatch } from '../context/todoContext'
+import { useSearchState } from '../context/searchContext'
+import { useTodoDispatch, useTodoState } from '../context/todoContext'
 import useDebounce from '../hooks/useDebounce'
 import useFocus from '../hooks/useFocus'
 import useInput from '../hooks/useInput'
-import useStatus, { StatusTypes } from '../hooks/useStatus'
 
 import Dropdown from './Dropdown'
 import Spinner from './Spinner'
@@ -14,31 +14,24 @@ import Spinner from './Spinner'
 const DEBOUNCE_DELAY = 500
 
 const TodoInput = () => {
+  const { loading: loadingTodo } = useTodoState()
+  const { loading: loadingSearch } = useSearchState()
+  const { addTodo } = useTodoDispatch()
+
   const { value, handleChange, reset } = useInput('')
   const debouncedValue = useDebounce(value, DEBOUNCE_DELAY)
 
-  const { status, changeStatus, isIdle } = useStatus()
   const { ref, setFocus } = useFocus<HTMLInputElement>()
-  const { add } = useTodoDispatch()
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      try {
-        changeStatus(StatusTypes.SAVING)
-        e.preventDefault()
-        const trimmed = value.trim()
-        if (!trimmed) {
-          return alert('Please write something')
-        }
-        const newItem = { title: trimmed }
-        await add(newItem)
-        reset()
-      } catch (error) {
-        console.error(error)
-        alert('Something went wrong.')
-      } finally {
-        changeStatus(StatusTypes.IDLE)
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
+      const trimmed = value.trim()
+      if (!trimmed) {
+        return alert('Please write something')
       }
+      const newItem = { title: trimmed }
+      addTodo(newItem).then(() => reset())
     },
     [value]
   )
@@ -56,22 +49,17 @@ const TodoInput = () => {
           ref={ref}
           value={value}
           onChange={handleChange}
-          disabled={!isIdle}
+          disabled={loadingTodo || loadingSearch}
         />
-        {isIdle ? (
+        {loadingTodo || loadingSearch ? (
+          <Spinner />
+        ) : (
           <TodoInputSubmitButton>
             <FaPlusCircle />
           </TodoInputSubmitButton>
-        ) : (
-          <Spinner />
         )}
       </TodoInputForm>
-      <Dropdown
-        keyword={debouncedValue}
-        isSearching={status === StatusTypes.SEARCHING}
-        resetInput={reset}
-        changeStatus={changeStatus}
-      />
+      <Dropdown keyword={debouncedValue} resetInput={reset} />
     </TodoInputLayout>
   )
 }

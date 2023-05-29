@@ -5,11 +5,11 @@ import { useTodoState } from '../context/todoContext'
 import TodoItem from './TodoItem'
 
 const TodoList = () => {
-  const todos = useTodoState()
+  const { data } = useTodoState()
 
-  return todos.length ? (
+  return data.length ? (
     <ul>
-      {todos.map(({ id, title }) => (
+      {data.map(({ id, title }) => (
         <TodoItem key={id} id={id} title={title} />
       ))}
     </ul>

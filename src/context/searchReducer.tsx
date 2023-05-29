@@ -1,36 +1,66 @@
-export type SearchState = { results: string[]; isEnd: boolean }
+import { error, loadingState, success } from '../utils/asyncActionUtils'
+
+export interface SearchState {
+  loading: boolean
+  data: {
+    results: string[]
+    isEnd: boolean
+  }
+  error: Error | null
+}
+
+export const initialSearchState = {
+  loading: false,
+  data: {
+    results: [],
+    isEnd: false
+  },
+  error: null
+}
 
 export enum SearchActionTypes {
-  ADD_RESULTS = 'ADD_RESULTS',
-  RESET_RESULTS = 'RESET_RESULTS'
+  LOADING = 'LOADING',
+  ADD_RESULT = 'ADD_RESULT',
+  RESET_RESULTS = 'RESET_RESULTS',
+  ERROR = 'ERROR'
 }
 
-interface AddResultAction {
-  type: SearchActionTypes.ADD_RESULTS
-  payload: { results: string[]; total: number }
-}
+export type SearchAction =
+  | {
+      type: SearchActionTypes.LOADING
+    }
+  | {
+      type: SearchActionTypes.ADD_RESULT
+      payload: { result: string[]; total: number }
+    }
+  | {
+      type: SearchActionTypes.RESET_RESULTS
+    }
+  | {
+      type: SearchActionTypes.ERROR
+      payload: { error: Error }
+    }
 
-interface ResetResultAction {
-  type: SearchActionTypes.RESET_RESULTS
-}
-
-export type SearchAction = AddResultAction | ResetResultAction
-
-const searchReducer = (state: SearchState, action: SearchAction) => {
+const searchReducer = (
+  state: SearchState,
+  action: SearchAction
+): SearchState => {
   switch (action.type) {
-    case SearchActionTypes.ADD_RESULTS:
-      const results = [...state.results, ...action.payload.results]
+    case SearchActionTypes.LOADING:
       return {
         ...state,
-        results,
-        isEnd: results.length === action.payload.total
+        ...loadingState
+      }
+    case SearchActionTypes.ADD_RESULT:
+      const results = [...state.data.results, ...action.payload.result]
+      return {
+        ...state,
+        ...success({ results, isEnd: results.length === action.payload.total })
       }
     case SearchActionTypes.RESET_RESULTS:
-      return {
-        ...state,
-        results: [],
-        isEnd: false
-      }
+      return initialSearchState
+    case SearchActionTypes.ERROR:
+      return { ...state, ...error(action.payload.error) }
     default:
       return state
   }

@@ -17,7 +17,7 @@ export class SearchService {
           limit
         }
       })
-      return response
+      return response.data
     } catch (error) {
       throw new Error(`API get error: ${this.RESOURCE}`)
     }
